@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Project;
+use App\Models\Technology;
 use App\Models\Type;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,8 @@ class ProjectController extends Controller
     public function create()
     {
         $types = Type::all();
-        return view('admin.projects.create', compact('types'));
+        $technologies = Technology::all();
+        return view('admin.projects.create', compact('types','technologies'));
     }
 
     /**
@@ -38,6 +40,7 @@ class ProjectController extends Controller
             'title' => 'required|max:255',
             'description' => 'required',
             'type_id' => 'nullable|exists:types,id',
+            'technologies' => 'exists:technologies,id'
 
         ]);
 
@@ -46,6 +49,10 @@ class ProjectController extends Controller
         $data = $request->all();
 
         $project = Project::create($data);
+
+        if ($request->has('technologies')) {
+            $project->tags()->attach($data['technologies']);
+        }
 
         return redirect()->route('admin.projects.show', $project);
     }
@@ -64,7 +71,9 @@ class ProjectController extends Controller
     public function edit(Project $project)
     {
         $types = Type::all();
-        return view('admin.projects.edit', compact('project', 'types'));
+        $technologies = Technology::all();
+
+        return view('admin.projects.edit', compact('project', 'types', 'technologies'));
     }
 
     /**
@@ -75,10 +84,19 @@ class ProjectController extends Controller
         $request->validate([
             'title' => 'required|max:255',
             'description' => 'required',
-            'type_id' => 'nullable|exists:types,id'
+            'type_id' => 'nullable|exists:types,id',
+            'technologies' => 'exists:technologies,id',
+
         ]);
         $data = $request->all();
         $project->update($data);
+
+        if ($request->has('technologies')) {
+            $project->technologies()->sync($data['technologies']);
+        } else {
+            // $post->tags()->sync([]);
+            $project->technologies()->detach();
+        }
 
         return redirect()->route('admin.projects.show', $project);
     }
@@ -88,6 +106,7 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
+        $project->technologies()->sync([]);
         $project->delete();
 
         return redirect()->route('admin.projects.index');
