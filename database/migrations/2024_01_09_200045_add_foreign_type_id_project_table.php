@@ -25,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
 
-            Schema::table('posts', function (Blueprint $table) {
+            Schema::table('projects', function (Blueprint $table) {
                 // rimuovere il vincolo della relazione
                 $table->dropForeign(['type_id']);
                 // droppare la colonna category_id
